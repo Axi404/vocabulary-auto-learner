@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>单词学习应用</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .question {
+            margin-top: 20px;
+        }
+        .options {
+            margin-top: 10px;
+        }
+        .options button {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>单词学习应用</h1>
+        <div id="content"></div>
+        <div id="questions"></div>
+        <div class="loading" id="loading">加载中...</div>
+        <button id="submit">提交</button>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const contentDiv = document.getElementById('content');
+        const questionsDiv = document.getElementById('questions');
+        const loadingDiv = document.getElementById('loading');
+        const resultsDiv = document.getElementById('results');
+        const submitButton = document.getElementById('submit');
+
+        let correctAnswers = {};
+        let userAnswers = {};
+
+        function loadContent() {
+            loadingDiv.style.display = 'block';
+            fetch('/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    words: ['apple', 'banana', 'cherry'], // 这里可以替换为实际的单词
+                    word_count: 3
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingDiv.style.display = 'none';
+                displayContent(data);
+            })
+            .catch(error => {
+                loadingDiv.style.display = 'none';
+                console.error('Error:', error);
+            });
+        }
+
+        function displayContent(data) {
+            contentDiv.innerHTML = `<p>${data.content}</p>`;
+            questionsDiv.innerHTML = '';
+
+            data.questions_answers.forEach((qa, index) => {
+                const questionDiv = document.createElement('div');
+                questionDiv.classList.add('question');
+                questionDiv.innerHTML = `<p>${qa.question}</p>`;
+
+                const optionsDiv = document.createElement('div');
+                optionsDiv.classList.add('options');
+                for (const [key, value] of Object.entries(qa.options)) {
+                    const button = document.createElement('button');
+                    button.innerText = `${key}: ${value}`;
+                    button.onclick = () => {
+                        userAnswers[index] = key;
+                        button.style.backgroundColor = 'lightblue';
+                    };
+                    optionsDiv.appendChild(button);
+                }
+
+                questionDiv.appendChild(optionsDiv);
+                questionsDiv.appendChild(questionDiv);
+
+                correctAnswers[index] = qa.answer;
+            });
+        }
+
+        submitButton.onclick = () => {
+            let correctWords = [];
+            let incorrectWords = [];
+            for (const [index, answer] of Object.entries(userAnswers)) {
+                if (answer === correctAnswers[index]) {
+                    correctWords.push(index);
+                } else {
+                    incorrectWords.push(index);
+                }
+            }
+
+            resultsDiv.innerHTML = `<p>正确的单词: ${correctWords.join(', ')}</p>`;
+            if (incorrectWords.length > 0) {
+                resultsDiv.innerHTML += `<p>错误的单词: ${incorrectWords.join(', ')}</p>`;
+            } else {
+                resultsDiv.innerHTML += `<p>恭喜你，全部答对了！</p>`;
+            }
+        };
+
+        loadContent();
+    </script>
+</body>
+</html>
