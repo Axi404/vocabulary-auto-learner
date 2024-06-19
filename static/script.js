@@ -1,33 +1,50 @@
 const contentDiv = document.getElementById('content');
 const questionsDiv = document.getElementById('questions');
 const loadingDiv = document.getElementById('loading');
-const resultsDiv = document.getElementById('results');
 const submitButton = document.getElementById('submit');
+const continueButton = document.getElementById('continue');
 
 let correctAnswers = {};
 let userAnswers = {};
 
 function loadContent() {
     loadingDiv.style.display = 'block';
+    contentDiv.style.display = 'none';
+    questionsDiv.style.display = 'none';
+    submitButton.style.display = 'none';
+    continueButton.style.display = 'none';
     fetch('/generate', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            words: ['apple', 'banana', 'cherry'], // 这里可以替换为实际的单词
             word_count: 3
         })
     })
     .then(response => response.json())
     .then(data => {
         loadingDiv.style.display = 'none';
-        displayContent(data);
+        console.log('Received data:', data);  // 添加调试信息
+        if (data.message) {
+            displayCompletionMessage(data.message);
+        } else {
+            displayContent(data);
+        }
     })
     .catch(error => {
         loadingDiv.style.display = 'none';
         console.error('Error:', error);
     });
+}
+
+function displayCompletionMessage(message) {
+    contentDiv.innerHTML = `<p>${message}</p>`;
+    questionsDiv.innerHTML = '';
+    contentDiv.style.display = 'block';
+    questionsDiv.style.display = 'none';
+    submitButton.style.display = 'none';
+    continueButton.style.display = 'none';
 }
 
 function displayContent(data) {
@@ -46,35 +63,57 @@ function displayContent(data) {
             button.innerText = `${key}: ${value}`;
             button.onclick = () => {
                 userAnswers[index] = key;
+                document.querySelectorAll(`.question[data-index="${index}"] button`).forEach(btn => {
+                    btn.style.backgroundColor = '';
+                });
                 button.style.backgroundColor = 'lightblue';
             };
             optionsDiv.appendChild(button);
         }
 
         questionDiv.appendChild(optionsDiv);
+        questionDiv.setAttribute('data-index', index);
         questionsDiv.appendChild(questionDiv);
 
         correctAnswers[index] = qa.answer;
     });
+    
+    contentDiv.style.display = 'block';
+    questionsDiv.style.display = 'block';
+    submitButton.style.display = 'block';
+    continueButton.style.display = 'none';
 }
 
 submitButton.onclick = () => {
-    let correctWords = [];
-    let incorrectWords = [];
-    for (const [index, answer] of Object.entries(userAnswers)) {
-        if (answer === correctAnswers[index]) {
-            correctWords.push(index);
-        } else {
-            incorrectWords.push(index);
-        }
-    }
+    document.querySelectorAll('.question').forEach((questionDiv, index) => {
+        
+        const userAnswer = userAnswers[index];
+        const correctAnswer = correctAnswers[index];
 
-    resultsDiv.innerHTML = `<p>正确的单词: ${correctWords.join(', ')}</p>`;
-    if (incorrectWords.length > 0) {
-        resultsDiv.innerHTML += `<p>错误的单词: ${incorrectWords.join(', ')}</p>`;
-    } else {
-        resultsDiv.innerHTML += `<p>恭喜你，全部答对了！</p>`;
-    }
+        questionDiv.querySelectorAll('button').forEach(button => {
+            const buttonAnswer = button.innerText.split(':')[0]; // 获取按钮的答案
+
+            if (buttonAnswer === correctAnswer && buttonAnswer !== userAnswer) {
+                button.style.backgroundColor = 'lightgreen'; // 正确答案按钮变成绿色
+            }
+        });
+
+        
+        if (userAnswer === correctAnswer) {
+            questionDiv.style.backgroundColor = 'lightgreen';
+        } else {
+            questionDiv.style.backgroundColor = 'lightcoral';
+        }
+    });
+
+    submitButton.style.display = 'none';
+    continueButton.style.display = 'block';
+};
+
+continueButton.onclick = () => {
+    userAnswers = {};
+    correctAnswers = {};
+    loadContent();
 };
 
 loadContent();
