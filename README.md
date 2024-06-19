@@ -8,6 +8,7 @@
 conda create -n val python=3.8
 conda activate val
 pip install openai==0.28
+pip install flask
 ```
 
 ## Usage
@@ -17,8 +18,10 @@ pip install openai==0.28
 修改words.txt中的词库，其中第一行是一次性学习的单词数量。VAL的运行逻辑是通过词库中的若干单词生成一篇短文，并且要求读者回答单词的含义。
 
 ```python
-python main.py
+python app.py
 ```
+
+打开`127.0.0.1:5000`即可访问。
 
 ## License
 
