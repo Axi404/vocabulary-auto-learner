@@ -8,8 +8,8 @@ app = Flask(__name__)
 
 # 如有转发站，填写在这里
 
-openai.api_base = ""
-os.environ['OPENAI_API_BASE'] = ''
+# openai.api_base = ""
+# os.environ['OPENAI_API_BASE'] = ''
 
 # 设置你的OpenAI API密钥
 openai.api_key = ''
